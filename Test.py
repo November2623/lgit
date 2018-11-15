@@ -2,6 +2,9 @@
 import hashlib
 import argparse
 import os
+from stat import *
+import datetime
+
 def get_argument():
     parser = argparse.ArgumentParser()
     parser.add_argument('command', nargs='+', help='init/add/commit/snapshots/index/config/status')
@@ -23,7 +26,8 @@ def directory_tree_list(path):
     for dirname, dirnames, filenames in os.walk(path):
         for filename in filenames:
             print(os.path.join(dirname, filename))
-
+def get_timestamp(filename):
+    stat = os.stat(filename)
+    print(stat.st_mtime)
 path = os.getcwd()
-caculate_sha1_file('text.txt')
-directory_tree_list(path)
+get_timestamp('text.txt')
