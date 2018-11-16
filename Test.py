@@ -20,7 +20,17 @@ def caculate_sha1_file(filename):
             hasher.update(buf)
             buf = afile.read()
     return hasher.hexdigest()
-
+def get_timestamp(filename):
+    t = os.path.getmtime(filename)
+    time = str(datetime.datetime.fromtimestamp(t))
+    list1 = time.split('.')
+    time = list1[0]
+    list_time = list(time)
+    timestamp = []
+    for i in list_time:
+        if i != '-' and i != ':' and i != ' ':
+            timestamp.append(i)
+    return(''.join(timestamp))
 
 def directory_tree_list(path):
     for dirname, dirnames, filenames in os.walk(path):
@@ -30,4 +40,4 @@ def get_timestamp(filename):
     stat = os.stat(filename)
     print(stat.st_mtime)
 path = os.getcwd()
-get_timestamp('text.txt')
+time('text.txt')

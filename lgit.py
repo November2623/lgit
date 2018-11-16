@@ -3,7 +3,7 @@ import argparse
 import os
 import hashlib
 import shutil
-
+import datetime
 
 def get_argument():
     parser = argparse.ArgumentParser()
@@ -15,12 +15,54 @@ def get_argument():
 def main():
     args = get_argument()
     command = args[0]
-    if command == 'init':
+    content_index = []
+    if command == 'init':  # lgit init
         create_dir()
-    elif command == 'add':
+    elif command == 'add':  #lgit add file
         argument = args[1:]
         for item in argument:
-            lgit_add(item)
+            list_index = lgit_add(item)
+            content_index = add_list(list_index, content_index)  # (3)
+        write_index(content_index)  # (1)
+    elif command == 'rm':  #lgit rm file
+        argument = args[1:]
+        for item in argument:
+            if not os.path.exists(item):
+                print('File does not exist!')
+            else:
+                update_index = remove_index(item)  #(2)
+                if update_index == 0:
+                    print("File not in index file")
+                else:
+                    write_index(update_index)  #(1)
+
+def write_index(list):  #write file index # (1)
+    path = os.getcwd()
+    with open(path + "/.lgit/index", 'w+') as f_index:
+        f_index.write('\n'.join(list))
+    f_index.close()
+
+
+def remove_index(filename): # find pathname_deleted in index and rm file # (2)
+    path = os.getcwd()
+    update_index = []
+    flag = 0
+    with open(path + "/.lgit/index", "r") as f_index:
+        lines = f_index.readlines()
+    for line in lines:
+        if not filename in line:
+            flag = 1
+            update_index.append(line.strip())
+    if flag == 0:
+        return flag  # if not have turn 0
+    else:
+        return update_index  # if have turn list are deleted file index
+
+
+def add_list(list, list_add):  #(3)
+    for i in list:
+        list_add.append(i)
+    return list_add
 
 
 def caculate_sha1_file(filename):
@@ -52,8 +94,12 @@ def create_dir():
     os.mkdir(path + '/commits')
     os.mkdir(path + '/objects')
     os.mkdir(path + '/snapshot')
-    os.path.join(path,'index')
-    os.path.join(path,'config')
+    filename_index = os.path.join(path,'index')
+    file = open(filename_index, 'w+')
+    file.close()
+    filename_config = os.path.join(path,'config')
+    file = open(filename_config, 'w+')
+    file.close()
 
 
 def create_file_objects(filename):
@@ -61,7 +107,6 @@ def create_file_objects(filename):
     file_content = open(filename,'r').read()
     path_objects = path +'/.lgit/objects'
     hash_sha1 = caculate_sha1_file(filename)
-    print(hash_sha1)
     file_name = hash_sha1[2:]
     dir_name =  hash_sha1[:2]
     if not os.path.exists(path_objects + "/" + dir_name):
@@ -70,11 +115,8 @@ def create_file_objects(filename):
     file.write(file_content)
     file.close()
     hash_sha2 = caculate_sha1_file(path_objects + "/" + dir_name + "/" + file_name)
-    print(hash_sha2)
     index = create_structure_index(filename, hash_sha1, hash_sha2)
-    with open(path_objects + "/" + dir_name + "/" + file_name, 'w+') as f_index:
-        f_index.write(index)
-    f_index.close()
+    return(index)
 
 
 def create_structure_index(filename, hash1, hash2):
@@ -90,24 +132,40 @@ def create_structure_index(filename, hash1, hash2):
     file_index.append(filename)
     return ' '.join(file_index)
 
+
 def get_timestamp(filename):
-    stat = os.stat(filename)
-    return stat.st_mtime
+    t = os.path.getmtime(filename)
+    time = str(datetime.datetime.fromtimestamp(t))
+    list1 = time.split('.')
+    time = list1[0]
+    list_time = list(time)
+    timestamp = []
+    for i in list_time:
+        if i != '-' and i != ':' and i != ' ':
+            timestamp.append(i)
+    return(''.join(timestamp))
+
 
 def lgit_add(file_name):
+    list_index = []
     if os.path.isdir(file_name):
         files = directory_tree_list(file_name)
         for file in files:
-            create_file_objects(file)
-    elif os.path.isfile(file_name):
-        create_file_objects(file_name)
+            index = create_file_objects(file)
+            list_index.append(index)
+            print(index)
+    if os.path.isfile(file_name):
+        index = create_file_objects(file_name)
+        print(index)
+        list_index.append(index)
+    return list_index
 
-
-
-
-
-
-
+def remove_file(filename):
+    basename = os.path.basename(filename)
+    if os.path.exists(filename):
+        os.remove(filename)
+    else:
+        print('The file does not exist')
 
 if __name__ == '__main__':
     main()
